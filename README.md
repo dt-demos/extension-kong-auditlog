@@ -1,10 +1,12 @@
 # Kong Konnect Audit Log Extension
 
-A **Dynatrace Extension 2.0** that bundles an OpenPipeline configuration and dashboard for monitoring Kong Konnect audit logs.
+A **Dynatrace Extension 2.0** that bundles an OpenPipeline configuration and dashboard for monitoring [Kong Konnect Audit Logs](https://docs.konghq.com/konnect/org-management/audit-logging/)
+
+<img alt="p-dynamic-route" src="images/dashboard.png">
 
 ## What It Does
 
-Kong Konnect can stream audit logs to Dynatrace via webhook (`/api/v2/logs/ingest`). This extension:
+Kong Konnect can stream [Kong Konnect Audit Logs](https://docs.konghq.com/konnect/org-management/audit-logging/) to Dynatrace via webhook (`/api/v2/logs/ingest`). This extension:
 
 1. **OpenPipeline source** — routes incoming logs from the extension source to the dedicated pipeline
 2. **OpenPipeline pipeline** — parses Kong's JSON audit log format, extracting fields for authentication, authorization, and access events
@@ -19,7 +21,7 @@ extension-kong-auditlog/
 │   ├── documents/
 │   │   └── overview.dashboard.json     # Kong Audit Logs dashboard
 │   └── openpipeline/
-│       ├── logs.pipeline.json          # Log parsing pipeline (5 processors)
+│       ├── logs.pipeline.json          # Log parsing pipeline
 │       └── logs.source.json            # Log source routing config
 └── README.md
 ```
@@ -83,15 +85,37 @@ Dynatrace must trust your signing certificate to accept the extension:
 
 Once this is done, extensions signed with your local key will be accepted by your tenant.
 
-## Building and Deploying
-
-### Using the VS Code Extension (Recommended)
+## Building and Deploying Using the VS Code Extension
 
 The `.vscode/settings.json` is already configured with the correct schemas. With the Dynatrace Extensions VS Code plugin:
 
 1. Open this workspace in VS Code
 2. Run **Dynatrace Extension: Build** command to create a signed ZIP file.  This increase the version number too and put the ZIP file into the `dist` folder.  
 3. The **build** command will also prompt for uploading the ZIP.  Alternatively, use Run **Dynatrace Extension: Upload** command to deploy to your tenant
+
+## Verify Install
+
+1. Open OpenPipeline in settings
+2. Navigate to `Logs --> Dynamic Routing` 
+3. The pipeline should be shown as below
+
+<img alt="p-dynamic-route" src="images/op.png">
+
+1. Navigate to `Dashboards` 
+2. Search for `Kong Audit Log` and it should appear as shown below
+
+<img alt="p-dynamic-route" src="images/dashboard.png" width="75%">
+
+## Configuring OpenPipeline
+
+An OpenPipeline Dynamic Route need to be configure.  Dynamic routing is when data is routed based on a matching condition. The matching condition is a DQL query that defines the data set you want to route.  To do this:
+
+1. Open OpenPipeline in settings
+2. Navigate to `Logs --> Dynamic Routing` 
+3. Choose `Add Dynamic Route`
+4. Fill is as shown below and click `Save`.  The Matching condition is `matchesPhrase(content,"KongInc")`
+
+<img alt="p-dynamic-route" src="images/op-dynamic-route.png" width="75%">
 
 ## Kong Konnect Configuration
 
