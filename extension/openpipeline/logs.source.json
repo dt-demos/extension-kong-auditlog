@@ -1,0 +1,11 @@
+{
+  "displayName": "Kong Audit Logs",
+  "metadataList": [],
+  "enabled": true,
+  "sourceType": "extension",
+  "source": "custom:com.dynatrace.extension.kong-auditlog",
+  "staticRouting": {
+    "pipelineType": "custom",
+    "pipelineId": "extension:kong-audit-log"
+  }
+}

@@ -1,0 +1,31 @@
+name: custom:com.dynatrace.extension.kong-auditlog
+version: 1.0.4
+minDynatraceVersion: 1.333.0
+
+author:
+  name: Dynatrace
+
+keywords:
+  - Kong Audit Logs
+  - kong
+  - konnect
+  - audit-logs
+  - security
+  - compliance
+
+# OpenPipeline configurations
+openpipeline:
+  sources:
+    - displayName: Kong Audit
+      sourcePath: openpipeline/logs.source.json
+      configScope: logs
+  pipelines:
+    - displayName: Kong Audit
+      pipelinePath: openpipeline/logs.pipeline.json
+      configScope: logs
+
+# Dashboards
+documents:
+  dashboards:
+  - displayName: Kong Audit Logs
+    path: documents/overview.dashboard.json

@@ -1,0 +1,75 @@
+{
+  "customId": "extension:kong-audit-log",
+  "displayName": "Kong Audit Logs",
+  "metadataList": [],
+  "routing": "routable",
+  "processing": {
+    "processors": [
+      {
+        "description": "Parse - Common",
+        "enabled": true,
+        "id": "processor_Parse_-_Copy_2056",
+        "matcher": "true",
+        "type": "dql",
+        "dql": {
+          "script": "parse content, \"JSON:json\"\n| fieldsAdd cef_version = asNumber(json[cef_version])\n| fieldsAdd event_class_id = json[event_class_id]\n| fieldsAdd event_product = json[event_product]\n| fieldsAdd event_vendor = json[event_vendor]\n| fieldsAdd event_version = json[event_version]\n| fieldsAdd event_ts = json[event_ts]\n| fieldsAdd name = json[name]\n| fieldsAdd org_id = json[org_id]\n| fieldsAdd principal_id = json[principal_id]\n| fieldsAdd principal_name = json[principal_name]\n| fieldsAdd rt = asNumber(json[rt])\n| fieldsAdd severity = asNumber(json[severity])\n| fieldsAdd sig = json[sig]\n| fieldsAdd src = json[src]\n| fieldsAdd trace_id = json[trace_id]\n| fieldsAdd user_agent = json[user_agent]\n| fieldsAdd source = dt.openpipeline.source\n| fieldsAdd timestamp = toTimestamp(event_ts)\n| fieldsAdd log.source = \"Kong Konnect\""
+        },
+        "sampleData": "[\n    {\n      \"timestamp\": \"2026-06-12T09:14:01.352000000-04:00\",\n      \"content\": \"{\\\"action\\\":\\\"read\\\",\\\"cef_version\\\":\\\"0\\\",\\\"event_class_id\\\":\\\"auditlogs\\\",\\\"event_product\\\":\\\"Konnect\\\",\\\"event_ts\\\":\\\"2026-06-12T13:14:01Z\\\",\\\"event_vendor\\\":\\\"KongInc\\\",\\\"event_version\\\":\\\"1.0\\\",\\\"granted\\\":true,\\\"name\\\":\\\"Authz.webhook\\\",\\\"org_id\\\":\\\"e75ad229-cbdc-4b18-85db-b517d4cc9f1c\\\",\\\"principal_id\\\":\\\"72400352-dea2-489c-ae4c-378bd3cc0754\\\",\\\"principal_name\\\":\\\"rob.jahn@dynatrace.com (rob.jahn@dynatrace.com)\\\",\\\"rt\\\":1781270041216,\\\"severity\\\":1,\\\"src\\\":\\\"71.184.143.177\\\",\\\"trace_id\\\":\\\"6a2c061900000000ec0143e2893a88de\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36\\\",\\\"sig\\\":\\\"FEz1_npV-YtQncfkyTsXJUIk82HMzb-do-Bm3jCrDt7oe36cQXq2YMD94XJBONsc18yK4A3_RsNPbzKQjy-QCw\\\"}\",\n      \"dt.openpipeline.pipelines\": \"logs:default\",\n      \"event.type\": \"LOG\",\n      \"status\": \"NONE\",\n      \"loglevel\": \"NONE\",\n      \"dt.auth.origin\": \"dt0c01.W6JXBXHQK4PNVWRDFMFDKBU2\",\n      \"dt.openpipeline.source\": \"/api/v2/logs/ingest\"\n    }\n  ]"
+      },
+      {
+        "description": "Parse - Authentication",
+        "enabled": true,
+        "id": "processor_Parse_-_Authentication_3157",
+        "matcher": "matchesPhrase(content,\"\\\"success\\\"\")",
+        "type": "dql",
+        "dql": {
+          "script": "parse content, \"JSON{LD:success}(flat=true)\"\n| fieldsAdd konnect_format = \"authentication\""
+        },
+        "sampleData": "[\n    {\n      \"timestamp\": \"2026-06-12T09:14:01.352000000-04:00\",\n      \"content\": \"{\\\"success\\\":true,\\\"cef_version\\\":\\\"0\\\",\\\"event_class_id\\\":\\\"AUTHENTICATION_TYPE_BASIC\\\",\\\"event_product\\\":\\\"Konnect\\\",\\\"event_ts\\\":\\\"2026-06-12T13:14:01Z\\\",\\\"event_vendor\\\":\\\"KongInc\\\",\\\"event_version\\\":\\\"1.0\\\",\\\"name\\\":\\\"AUTHENTICATION_OUTCOME_SUCCESS\\\",\\\"org_id\\\":\\\"e75ad229-cbdc-4b18-85db-b517d4cc9f1c\\\",\\\"principal_id\\\":\\\"72400352-dea2-489c-ae4c-378bd3cc0754\\\",\\\"principal_name\\\":\\\"rob.jahn@dynatrace.com (rob.jahn@dynatrace.com)\\\",\\\"rt\\\":1781270041216,\\\"severity\\\":1,\\\"src\\\":\\\"71.184.143.177\\\",\\\"trace_id\\\":\\\"6a2c061900000000ec0143e2893a88de\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36\\\",\\\"sig\\\":\\\"abc123\\\"}\",\n      \"event.type\": \"LOG\",\n      \"status\": \"NONE\",\n      \"loglevel\": \"NONE\"\n    }\n  ]"
+      },
+      {
+        "description": "Parse - Authorization",
+        "enabled": true,
+        "id": "processor_Parse_-_Authorization_4917",
+        "matcher": "matchesPhrase(content,\"\\\"action\\\"\")",
+        "type": "dql",
+        "dql": {
+          "script": "parse content, \"JSON{LD:action,BOOL:granted}(flat=true)\"\n| fieldsAdd konnect_format = \"authorization\""
+        },
+        "sampleData": "[\n    {\n      \"timestamp\": \"2026-06-12T09:14:01.352000000-04:00\",\n      \"content\": \"{\\\"action\\\":\\\"retrieve\\\",\\\"cef_version\\\":\\\"0\\\",\\\"event_class_id\\\":\\\"konnect\\\",\\\"event_product\\\":\\\"Konnect\\\",\\\"event_ts\\\":\\\"2026-06-12T13:14:01Z\\\",\\\"event_vendor\\\":\\\"KongInc\\\",\\\"event_version\\\":\\\"1.0\\\",\\\"granted\\\":true,\\\"name\\\":\\\"Authz.webhook\\\",\\\"org_id\\\":\\\"e75ad229-cbdc-4b18-85db-b517d4cc9f1c\\\",\\\"principal_id\\\":\\\"72400352-dea2-489c-ae4c-378bd3cc0754\\\",\\\"principal_name\\\":\\\"rob.jahn@dynatrace.com (rob.jahn@dynatrace.com)\\\",\\\"rt\\\":1781270041216,\\\"severity\\\":1,\\\"src\\\":\\\"71.184.143.177\\\",\\\"trace_id\\\":\\\"6a2c061900000000ec0143e2893a88de\\\",\\\"user_agent\\\":\\\"Mozilla/5.0\\\",\\\"sig\\\":\\\"abc123\\\"}\",\n      \"event.type\": \"LOG\",\n      \"status\": \"NONE\",\n      \"loglevel\": \"NONE\"\n    }\n  ]"
+      },
+      {
+        "description": "Parse - Access",
+        "enabled": true,
+        "id": "processor_Parse_-_Access_3514",
+        "matcher": "matchesPhrase(content,\"\\\"status\\\"\")",
+        "type": "dql",
+        "dql": {
+          "script": "parse content, \"JSON{LD:act,LD:query,INT:status:access_status}(flat=true)\"\n| fieldsAdd konnect_format = \"access\""
+        },
+        "sampleData": "[\n    {\n      \"timestamp\": \"2026-06-12T09:14:01.352000000-04:00\",\n      \"content\": \"{\\\"act\\\":\\\"POST\\\",\\\"cef_version\\\":\\\"0\\\",\\\"event_class_id\\\":\\\"konnect\\\",\\\"event_product\\\":\\\"Konnect\\\",\\\"event_ts\\\":\\\"2026-06-12T13:14:01Z\\\",\\\"event_vendor\\\":\\\"KongInc\\\",\\\"event_version\\\":\\\"1.0\\\",\\\"name\\\":\\\"Ingress\\\",\\\"org_id\\\":\\\"e75ad229-cbdc-4b18-85db-b517d4cc9f1c\\\",\\\"principal_id\\\":\\\"72400352-dea2-489c-ae4c-378bd3cc0754\\\",\\\"principal_name\\\":\\\"rob.jahn@dynatrace.com (rob.jahn@dynatrace.com)\\\",\\\"query\\\":\\\"{}\\\",\\\"rt\\\":1781270041216,\\\"severity\\\":1,\\\"src\\\":\\\"71.184.143.177\\\",\\\"status\\\":200,\\\"trace_id\\\":\\\"6a2c061900000000ec0143e2893a88de\\\",\\\"user_agent\\\":\\\"Mozilla/5.0\\\",\\\"sig\\\":\\\"abc123\\\"}\",\n      \"event.type\": \"LOG\",\n      \"status\": \"NONE\",\n      \"loglevel\": \"NONE\"\n    }\n  ]"
+      },
+      {
+        "description": "Drop JSON",
+        "enabled": true,
+        "id": "processor_Drop_JSON_7427",
+        "matcher": "true",
+        "type": "fieldsRemove",
+        "fieldsRemove": {
+          "fields": [
+            "json"
+          ]
+        }
+      }
+    ]
+  },
+  "securityContext": { "processors": [] },
+  "costAllocation": { "processors": [] },
+  "productAllocation": { "processors": [] },
+  "storage": { "processors": [] },
+  "smartscapeNodeExtraction": { "processors": [] },
+  "smartscapeEdgeExtraction": { "processors": [] },
+  "metricExtraction": { "processors": [] },
+  "davis": { "processors": [] },
+  "dataExtraction": { "processors": [] }
+}
