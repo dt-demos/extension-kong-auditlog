@@ -2,7 +2,7 @@
 
 A **Dynatrace Extension 2.0** that bundles an OpenPipeline configuration and dashboard for monitoring [Kong Konnect Audit Logs](https://docs.konghq.com/konnect/org-management/audit-logging/)
 
-<img alt="p-dynamic-route" src="images/dashboard.png">
+<img alt="kong-overview" src="images/kong-overview.png" width="75%">>
 
 ## What It Does
 
@@ -99,12 +99,12 @@ The `.vscode/settings.json` is already configured with the correct schemas. With
 2. Navigate to `Logs --> Dynamic Routing` 
 3. The pipeline should be shown as below
 
-<img alt="p-dynamic-route" src="images/op.png">
+<img alt="openpipeline" src="images/op.png">
 
 1. Navigate to `Dashboards` 
 2. Search for `Kong Audit Log` and it should appear as shown below
 
-<img alt="p-dynamic-route" src="images/dashboard.png" width="75%">
+<img alt="dashboard" src="images/dashboard.png" width="75%">
 
 ## Configuring OpenPipeline
 
@@ -115,7 +115,7 @@ An OpenPipeline Dynamic Route need to be configure.  Dynamic routing is when dat
 3. Choose `Add Dynamic Route`
 4. Fill is as shown below and click `Save`.  The Matching condition is `matchesPhrase(content,"KongInc")`
 
-<img alt="p-dynamic-route" src="images/op-dynamic-route.png" width="75%">
+<img alt="op-dynamic-route" src="images/op-dynamic-route.png" width="75%">
 
 ## Kong Konnect Configuration
 
