@@ -133,6 +133,101 @@ Content-Type: application/json
 
 The API token needs the **Ingest logs** (`logs.ingest`) scope.
 
+## OpenPipeline Field Mapping
+
+The pipeline maps Kong Konnect's raw JSON fields to the [Dynatrace Audit Log semantic model](https://docs.dynatrace.com/docs/semantic-dictionary/model/log#audit-logs). Fields that have no semantic equivalent are stored as `kong.konnect.*` vendor-namespaced attributes, following the same `vendor.product.attribute` convention used by `aws.s3.*`, `azure.container_app.*`, etc.
+
+### Common Fields (all three event types)
+
+| Konnect JSON Field | DT Semantic Field | Transform |
+|---|---|---|
+| `principal_name` / `principal_id` | `audit.identity` | `coalesce(principal_name, principal_id)` — uses human-readable name when configured in Konnect, falls back to UUID |
+| `event_ts` | `audit.time` | `toTimestamp(event_ts)` — ISO 8601 string → timestamp |
+| `src` | `client.ip` | direct |
+| `user_agent` | `browser.user_agent` | direct |
+| `trace_id` | `trace_id` | direct |
+| `trace_id` + `rt` | `log.record.uid` | composed: `concat(trace_id, "_", rt)` — Konnect has no per-event unique ID |
+| `rt` | `timestamp` | `rt * 1,000,000` — converts Konnect's Unix milliseconds to DT nanoseconds |
+| _(static)_ | `log.source` | `"konnect-audit-webhook"` |
+| _(static)_ | `cloud.provider` | `"konghq"` |
+| `org_id` | `kong.konnect.org.id` | custom — multi-tenant scope; no DT semantic equivalent |
+| `sig` | `kong.konnect.sig` | custom — ED25519 integrity signature |
+| `kong_initiated` | `kong.konnect.initiated` | custom — boolean; distinguishes system-initiated from user-initiated actions |
+
+Fields `cef_version`, `event_class_id`, `event_product`, `event_vendor`, `event_version`, `name`, `severity`, and `principal_name` are CEF wire-format artifacts and are dropped on ingest.
+
+---
+
+### Authentication Events
+
+Detected by: `matchesPhrase(content, "\"success\"")`
+
+The authentication type and outcome are carried in the CEF `event_class_id` and `name` JSON fields respectively.
+
+| Konnect JSON Field | DT Semantic Field | Transform |
+|---|---|---|
+| `event_class_id` | `audit.action` | strip `AUTHENTICATION_TYPE_` prefix → human label: `BASIC`→`"Basic Authentication"`, `SSO`→`"SSO Authentication"`, `PAT`→`"PAT Authentication"` |
+| `success` | `audit.result` | `true`→`"Succeeded"`, `false`→`"Failed"` |
+| `name` | `audit.status` | strip `AUTHENTICATION_OUTCOME_` prefix → map: `SUCCESS`→`"Succeeded"`, `LOCKED`/`DISABLED`→`"Active"`, others→`"Failed"` |
+
+---
+
+### Authorization Events
+
+Detected by: `matchesPhrase(content, "\"action\"")`
+
+> **Volume filter:** Only `granted=false` (denied) events are forwarded to storage. Events where `granted=true` are dropped in the pipeline — authorization checks fire on every API call, making successful grants extremely high volume with low security signal value.
+
+| Konnect JSON Field | DT Semantic Field | Transform |
+|---|---|---|
+| `action` | `audit.action` | direct — clean action verbs: `retrieve`, `list`, `edit`, etc. |
+| `granted` | `audit.result` | `true`→`"Succeeded"`, `false`→`"Failed"` |
+| `granted` | `audit.status` | same transform as `audit.result` |
+| `actor_id` | `kong.konnect.actor.id` | custom — delegation or impersonation identity; no DT semantic equivalent |
+
+---
+
+### Access Events
+
+Detected by: `matchesPhrase(content, "\"status\"")`
+
+Access events are HTTP access logs (mutating API operations). The `audit.action` field is composed from the HTTP verb and request path since there is no single action field.
+
+| Konnect JSON Field | DT Semantic Field | Transform |
+|---|---|---|
+| `act` + `request` | `audit.action` | composed: `concat(act, " ", request)` e.g. `"POST /konnect-api/api/vitals/v1/explore"` |
+| `status` | `audit.result` | `2xx`→`"Succeeded"`, all others→`"Failed"` |
+| `status` | `result.code` | direct (long) — HTTP status code |
+
+---
+
+### DQL Anchor Queries
+
+```dql
+// All Konnect audit events
+fetch logs
+| filter log.source == "konnect-audit-webhook"
+| fields timestamp, konnect_format, audit.identity, audit.action, audit.result, client.ip, result.code
+| sort timestamp desc
+
+// Authentication failures by method
+fetch logs
+| filter log.source == "konnect-audit-webhook" and konnect_format == "authentication" and audit.result == "Failed"
+| summarize failures = count(), by: {audit.action, audit.identity, client.ip}
+| sort failures desc
+
+// Authorization denials
+fetch logs
+| filter log.source == "konnect-audit-webhook" and konnect_format == "authorization"
+| fields timestamp, audit.identity, audit.action, client.ip
+
+// Access errors (4xx / 5xx)
+fetch logs
+| filter log.source == "konnect-audit-webhook" and konnect_format == "access" and result.code >= 400
+| fields timestamp, audit.identity, audit.action, result.code
+| sort timestamp desc
+```
+
 ## Resources
 
 - [Dynatrace Extensions 2.0 Documentation](https://www.dynatrace.com/support/help/extend-dynatrace/extensions20)
