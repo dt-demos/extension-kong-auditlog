@@ -64,6 +64,9 @@ config/
 logs/
 _JUNK/
 
+# Extension schemas — downloaded by 'make schemas', not committed
+.schemas/
+
 # Local Claude skills and settings
 skills-lock.json
 .agents/

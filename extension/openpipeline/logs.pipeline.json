@@ -8,11 +8,11 @@
       {
         "description": "Parse - Common",
         "enabled": true,
-        "id": "processor_Parse_-_Copy_2056",
+        "id": "processor_parse_common",
         "matcher": "true",
         "type": "dql",
         "dql": {
-          "script": "parse content, \"JSON:json\"\n| fieldsAdd cef_version = asNumber(json[cef_version])\n| fieldsAdd event_class_id = json[event_class_id]\n| fieldsAdd event_product = json[event_product]\n| fieldsAdd event_vendor = json[event_vendor]\n| fieldsAdd event_version = json[event_version]\n| fieldsAdd event_ts = json[event_ts]\n| fieldsAdd name = json[name]\n| fieldsAdd org_id = json[org_id]\n| fieldsAdd principal_id = json[principal_id]\n| fieldsAdd principal_name = json[principal_name]\n| fieldsAdd rt = asNumber(json[rt])\n| fieldsAdd severity = asNumber(json[severity])\n| fieldsAdd sig = json[sig]\n| fieldsAdd src = json[src]\n| fieldsAdd trace_id = json[trace_id]\n| fieldsAdd user_agent = json[user_agent]\n| fieldsAdd source = dt.openpipeline.source\n| fieldsAdd timestamp = toTimestamp(event_ts)\n| fieldsAdd log.source = \"Kong Konnect\""
+          "script": "parse content, \"JSON:json\"\n| fieldsAdd audit.identity = coalesce(json[principal_name], json[principal_id])\n| fieldsAdd audit.time = toTimestamp(json[event_ts])\n| fieldsAdd client.ip = json[src]\n| fieldsAdd browser.user_agent = json[user_agent]\n| fieldsAdd trace_id = json[trace_id]\n| fieldsAdd log.record.uid = concat(toString(json[trace_id]), \"_\", toString(json[rt]))\n| fieldsAdd timestamp = toTimestamp(toLong(asNumber(json[rt])) * 1000000)\n| fieldsAdd log.source = \"kong-audit-webhook\"\n| fieldsAdd cloud.provider = \"konghq\"\n| fieldsAdd kong.konnect.org.id = json[org_id]\n| fieldsAdd kong.konnect.sig = json[sig]\n| fieldsAdd kong.konnect.initiated = json[kong_initiated]"
         },
         "sampleData": "[\n    {\n      \"timestamp\": \"2026-06-12T09:14:01.352000000-04:00\",\n      \"content\": \"{\\\"action\\\":\\\"read\\\",\\\"cef_version\\\":\\\"0\\\",\\\"event_class_id\\\":\\\"auditlogs\\\",\\\"event_product\\\":\\\"Konnect\\\",\\\"event_ts\\\":\\\"2026-06-12T13:14:01Z\\\",\\\"event_vendor\\\":\\\"KongInc\\\",\\\"event_version\\\":\\\"1.0\\\",\\\"granted\\\":true,\\\"name\\\":\\\"Authz.webhook\\\",\\\"org_id\\\":\\\"e75ad229-cbdc-4b18-85db-b517d4cc9f1c\\\",\\\"principal_id\\\":\\\"72400352-dea2-489c-ae4c-378bd3cc0754\\\",\\\"principal_name\\\":\\\"rob.jahn@dynatrace.com (rob.jahn@dynatrace.com)\\\",\\\"rt\\\":1781270041216,\\\"severity\\\":1,\\\"src\\\":\\\"71.184.143.177\\\",\\\"trace_id\\\":\\\"6a2c061900000000ec0143e2893a88de\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36\\\",\\\"sig\\\":\\\"FEz1_npV-YtQncfkyTsXJUIk82HMzb-do-Bm3jCrDt7oe36cQXq2YMD94XJBONsc18yK4A3_RsNPbzKQjy-QCw\\\"}\",\n      \"dt.openpipeline.pipelines\": \"logs:default\",\n      \"event.type\": \"LOG\",\n      \"status\": \"NONE\",\n      \"loglevel\": \"NONE\",\n      \"dt.auth.origin\": \"dt0c01.W6JXBXHQK4PNVWRDFMFDKBU2\",\n      \"dt.openpipeline.source\": \"/api/v2/logs/ingest\"\n    }\n  ]"
       },
@@ -23,7 +23,7 @@
         "matcher": "matchesPhrase(content,\"\\\"success\\\"\")",
         "type": "dql",
         "dql": {
-          "script": "parse content, \"JSON{LD:success}(flat=true)\"\n| fieldsAdd konnect_format = \"authentication\""
+          "script": "parse content, \"JSON{LD:event_class_id,LD:name:auth_outcome,BOOL:success}(flat=true)\"\n| fieldsAdd konnect_format = \"authentication\"\n| fieldsAdd audit.action = if(event_class_id == \"AUTHENTICATION_TYPE_BASIC\", \"Basic Authentication\", else: if(event_class_id == \"AUTHENTICATION_TYPE_SSO\", \"SSO Authentication\", else: if(event_class_id == \"AUTHENTICATION_TYPE_PAT\", \"PAT Authentication\", else: event_class_id)))\n| fieldsAdd audit.result = if(success == true, \"Succeeded\", else: \"Failed\")\n| fieldsAdd audit.status = if(auth_outcome == \"AUTHENTICATION_OUTCOME_SUCCESS\", \"Succeeded\", else: if(auth_outcome == \"AUTHENTICATION_OUTCOME_LOCKED\", \"Active\", else: if(auth_outcome == \"AUTHENTICATION_OUTCOME_DISABLED\", \"Active\", else: \"Failed\")))\n| fieldsRemove event_class_id, auth_outcome, success"
         },
         "sampleData": "[\n    {\n      \"timestamp\": \"2026-06-12T09:14:01.352000000-04:00\",\n      \"content\": \"{\\\"success\\\":true,\\\"cef_version\\\":\\\"0\\\",\\\"event_class_id\\\":\\\"AUTHENTICATION_TYPE_BASIC\\\",\\\"event_product\\\":\\\"Konnect\\\",\\\"event_ts\\\":\\\"2026-06-12T13:14:01Z\\\",\\\"event_vendor\\\":\\\"KongInc\\\",\\\"event_version\\\":\\\"1.0\\\",\\\"name\\\":\\\"AUTHENTICATION_OUTCOME_SUCCESS\\\",\\\"org_id\\\":\\\"e75ad229-cbdc-4b18-85db-b517d4cc9f1c\\\",\\\"principal_id\\\":\\\"72400352-dea2-489c-ae4c-378bd3cc0754\\\",\\\"principal_name\\\":\\\"rob.jahn@dynatrace.com (rob.jahn@dynatrace.com)\\\",\\\"rt\\\":1781270041216,\\\"severity\\\":1,\\\"src\\\":\\\"71.184.143.177\\\",\\\"trace_id\\\":\\\"6a2c061900000000ec0143e2893a88de\\\",\\\"user_agent\\\":\\\"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36\\\",\\\"sig\\\":\\\"abc123\\\"}\",\n      \"event.type\": \"LOG\",\n      \"status\": \"NONE\",\n      \"loglevel\": \"NONE\"\n    }\n  ]"
       },
@@ -31,10 +31,10 @@
         "description": "Parse - Authorization",
         "enabled": true,
         "id": "processor_Parse_-_Authorization_4917",
-        "matcher": "matchesPhrase(content,\"\\\"action\\\"\")",
+        "matcher": "matchesPhrase(content,\"\\\"granted\\\"\")",
         "type": "dql",
         "dql": {
-          "script": "parse content, \"JSON{LD:action,BOOL:granted}(flat=true)\"\n| fieldsAdd konnect_format = \"authorization\""
+          "script": "parse content, \"JSON{LD:action,BOOL:granted,LD:actor_id}(flat=true)\"\n| fieldsAdd konnect_format = \"authorization\"\n| fieldsAdd audit.action = action\n| fieldsAdd audit.result = if(granted == true, \"Succeeded\", else: \"Failed\")\n| fieldsAdd audit.status = if(granted == true, \"Succeeded\", else: \"Failed\")\n| fieldsAdd kong.konnect.actor.id = actor_id\n| fieldsRemove action, granted, actor_id"
         },
         "sampleData": "[\n    {\n      \"timestamp\": \"2026-06-12T09:14:01.352000000-04:00\",\n      \"content\": \"{\\\"action\\\":\\\"retrieve\\\",\\\"cef_version\\\":\\\"0\\\",\\\"event_class_id\\\":\\\"konnect\\\",\\\"event_product\\\":\\\"Konnect\\\",\\\"event_ts\\\":\\\"2026-06-12T13:14:01Z\\\",\\\"event_vendor\\\":\\\"KongInc\\\",\\\"event_version\\\":\\\"1.0\\\",\\\"granted\\\":true,\\\"name\\\":\\\"Authz.webhook\\\",\\\"org_id\\\":\\\"e75ad229-cbdc-4b18-85db-b517d4cc9f1c\\\",\\\"principal_id\\\":\\\"72400352-dea2-489c-ae4c-378bd3cc0754\\\",\\\"principal_name\\\":\\\"rob.jahn@dynatrace.com (rob.jahn@dynatrace.com)\\\",\\\"rt\\\":1781270041216,\\\"severity\\\":1,\\\"src\\\":\\\"71.184.143.177\\\",\\\"trace_id\\\":\\\"6a2c061900000000ec0143e2893a88de\\\",\\\"user_agent\\\":\\\"Mozilla/5.0\\\",\\\"sig\\\":\\\"abc123\\\"}\",\n      \"event.type\": \"LOG\",\n      \"status\": \"NONE\",\n      \"loglevel\": \"NONE\"\n    }\n  ]"
       },
@@ -42,12 +42,22 @@
         "description": "Parse - Access",
         "enabled": true,
         "id": "processor_Parse_-_Access_3514",
-        "matcher": "matchesPhrase(content,\"\\\"status\\\"\")",
+        "matcher": "matchesPhrase(content,\"\\\"act\\\"\")",
         "type": "dql",
         "dql": {
-          "script": "parse content, \"JSON{LD:act,LD:query,INT:status:access_status}(flat=true)\"\n| fieldsAdd konnect_format = \"access\""
+          "script": "parse content, \"JSON{LD:act,LD:request,INT:status:access_status}(flat=true)\"\n| fieldsAdd konnect_format = \"access\"\n| fieldsAdd audit.action = if(isNotNull(request), concat(act, \" \", request), else: act)\n| fieldsAdd audit.result = if(access_status >= 200 and access_status < 300, \"Succeeded\", else: \"Failed\")\n| fieldsAdd audit.status = if(access_status >= 200 and access_status < 300, \"Succeeded\", else: \"Failed\")\n| fieldsAdd result.code = toLong(access_status)\n| fieldsRemove act, request, access_status"
         },
         "sampleData": "[\n    {\n      \"timestamp\": \"2026-06-12T09:14:01.352000000-04:00\",\n      \"content\": \"{\\\"act\\\":\\\"POST\\\",\\\"cef_version\\\":\\\"0\\\",\\\"event_class_id\\\":\\\"konnect\\\",\\\"event_product\\\":\\\"Konnect\\\",\\\"event_ts\\\":\\\"2026-06-12T13:14:01Z\\\",\\\"event_vendor\\\":\\\"KongInc\\\",\\\"event_version\\\":\\\"1.0\\\",\\\"name\\\":\\\"Ingress\\\",\\\"org_id\\\":\\\"e75ad229-cbdc-4b18-85db-b517d4cc9f1c\\\",\\\"principal_id\\\":\\\"72400352-dea2-489c-ae4c-378bd3cc0754\\\",\\\"principal_name\\\":\\\"rob.jahn@dynatrace.com (rob.jahn@dynatrace.com)\\\",\\\"query\\\":\\\"{}\\\",\\\"rt\\\":1781270041216,\\\"severity\\\":1,\\\"src\\\":\\\"71.184.143.177\\\",\\\"status\\\":200,\\\"trace_id\\\":\\\"6a2c061900000000ec0143e2893a88de\\\",\\\"user_agent\\\":\\\"Mozilla/5.0\\\",\\\"sig\\\":\\\"abc123\\\"}\",\n      \"event.type\": \"LOG\",\n      \"status\": \"NONE\",\n      \"loglevel\": \"NONE\"\n    }\n  ]"
+      },
+      {
+        "description": "Map severity",
+        "enabled": true,
+        "id": "processor_map_severity",
+        "matcher": "true",
+        "type": "dql",
+        "dql": {
+          "script": "fieldsAdd status = if(audit.result == \"Failed\", \"ERROR\", else: \"INFO\")\n| fieldsAdd loglevel = status"
+        }
       },
       {
         "description": "Drop JSON",
