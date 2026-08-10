@@ -58,7 +58,7 @@ release: $(ZIP)
 	@test -f "$(CA_PEM)" || { echo "ERROR: CA cert not found at $(CA_PEM)"; echo "Run: dt-sdk gencerts  (or set CA_PEM=/path/to/ca.pem)"; exit 1; }
 	gh release create v$(VERSION) $(ZIP) $(CA_PEM) \
 	  --title "Kong Konnect Audit Log Extension v$(VERSION)" \
-	  --notes-file DISTRO.md
+	  --generate-notes
 
 schemas:
 	mkdir -p .schemas
